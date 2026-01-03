@@ -62,6 +62,7 @@ export async function GET(request: NextRequest) {
         });
 
         // Prepare the endpoint data
+        // Re-activate endpoints and reset failures when they appear in source data
         const endpointData = {
           resource_url: endpoint.resource_url,
           bazaar_data: endpoint.raw_data,
@@ -73,6 +74,8 @@ export async function GET(request: NextRequest) {
           tags: classification.tags,
           source: endpoint.source,
           updated_at: new Date().toISOString(),
+          is_active: true,
+          consecutive_failures: 0,
         };
 
         // Upsert the endpoint
