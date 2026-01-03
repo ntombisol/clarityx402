@@ -426,3 +426,4 @@ RATE_LIMIT_FREE_TIER=100
 - **MCP SDK:** https://modelcontextprotocol.io
 - **Supabase Docs:** https://supabase.com/docs
 - **shadcn/ui:** https://ui.shadcn.com
+END
