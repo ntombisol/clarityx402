@@ -44,7 +44,7 @@ export interface BazaarResource {
 
 export interface BazaarResponse {
   resources: BazaarResource[];
-  nextPageToken?: string;
+  nextOffset?: number;
 }
 
 // Transformed endpoint for our database

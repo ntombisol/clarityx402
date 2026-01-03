@@ -2,7 +2,13 @@
   "permissions": {
     "allow": [
       "Bash(npm install:*)",
-      "Bash(npm run build:*)"
+      "Bash(npm run build:*)",
+      "WebFetch(domain:docs.cdp.coinbase.com)",
+      "WebFetch(domain:raw.githubusercontent.com)",
+      "Bash(cat:*)",
+      "WebFetch(domain:docs.swarms.world)",
+      "Bash(curl:*)",
+      "WebFetch(domain:www.x402scan.com)"
     ]
   }
 }

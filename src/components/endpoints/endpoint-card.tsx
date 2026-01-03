@@ -7,17 +7,26 @@ interface EndpointCardProps {
   resourceUrl: string;
   description: string | null;
   category: string | null;
+  network: string | null;
   priceMicroUsdc: number | null;
   uptime24h: number | null;
   avgLatencyMs: number | null;
   isActive: boolean;
 }
 
+const networkColors: Record<string, string> = {
+  base: "bg-blue-500/10 text-blue-500 border-blue-500/20",
+  solana: "bg-purple-500/10 text-purple-500 border-purple-500/20",
+  polygon: "bg-violet-500/10 text-violet-500 border-violet-500/20",
+  ethereum: "bg-gray-500/10 text-gray-500 border-gray-500/20",
+};
+
 export function EndpointCard({
   id,
   resourceUrl,
   description,
   category,
+  network,
   priceMicroUsdc,
   uptime24h,
   avgLatencyMs,
@@ -39,11 +48,21 @@ export function EndpointCard({
               </Badge>
             )}
           </div>
-          {category && (
-            <Badge variant="secondary" className="w-fit text-xs">
-              {category}
-            </Badge>
-          )}
+          <div className="flex gap-1 flex-wrap">
+            {network && (
+              <Badge
+                variant="outline"
+                className={`w-fit text-xs capitalize ${networkColors[network] || ""}`}
+              >
+                {network}
+              </Badge>
+            )}
+            {category && (
+              <Badge variant="secondary" className="w-fit text-xs">
+                {category}
+              </Badge>
+            )}
+          </div>
         </CardHeader>
         <CardContent>
           <p className="text-xs text-muted-foreground mb-3 line-clamp-2">

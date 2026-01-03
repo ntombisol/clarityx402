@@ -9,10 +9,17 @@ export const revalidate = 60;
 interface EndpointsPageProps {
   searchParams: Promise<{
     category?: string;
+    network?: string;
     search?: string;
     sort?: string;
   }>;
 }
+
+const networks = [
+  { slug: "base", name: "Base", color: "bg-blue-500/10 text-blue-500 border-blue-500/20" },
+  { slug: "solana", name: "Solana", color: "bg-purple-500/10 text-purple-500 border-purple-500/20" },
+  { slug: "polygon", name: "Polygon", color: "bg-violet-500/10 text-violet-500 border-violet-500/20" },
+];
 
 export default async function EndpointsPage({ searchParams }: EndpointsPageProps) {
   const params = await searchParams;
@@ -28,12 +35,16 @@ export default async function EndpointsPage({ searchParams }: EndpointsPageProps
   let query = supabase
     .from("endpoints")
     .select(
-      "id, resource_url, description, category, price_micro_usdc, uptime_24h, avg_latency_ms, is_active"
+      "id, resource_url, description, category, network, price_micro_usdc, uptime_24h, avg_latency_ms, is_active"
     )
     .eq("is_active", true);
 
   if (params.category) {
     query = query.eq("category", params.category);
+  }
+
+  if (params.network) {
+    query = query.eq("network", params.network);
   }
 
   if (params.search) {
@@ -77,30 +88,55 @@ export default async function EndpointsPage({ searchParams }: EndpointsPageProps
           />
         </form>
 
-        {/* Category filters */}
+        {/* Network filters */}
         <div className="flex flex-wrap gap-2">
-          <Link href="/endpoints">
+          <Link href={`/endpoints?${new URLSearchParams({ ...params, network: "" }).toString()}`}>
             <Badge
-              variant={!params.category ? "default" : "outline"}
+              variant={!params.network ? "default" : "outline"}
               className="cursor-pointer"
             >
-              All
+              All Networks
             </Badge>
           </Link>
-          {categories?.map((category) => (
+          {networks.map((network) => (
             <Link
-              key={category.slug}
-              href={`/endpoints?category=${category.slug}`}
+              key={network.slug}
+              href={`/endpoints?${new URLSearchParams({ ...params, network: network.slug }).toString()}`}
             >
               <Badge
-                variant={params.category === category.slug ? "default" : "outline"}
-                className="cursor-pointer"
+                variant={params.network === network.slug ? "default" : "outline"}
+                className={`cursor-pointer ${params.network === network.slug ? "" : network.color}`}
               >
-                {category.name}
+                {network.name}
               </Badge>
             </Link>
           ))}
         </div>
+      </div>
+
+      {/* Category filters */}
+      <div className="flex flex-wrap gap-2">
+        <Link href={`/endpoints?${new URLSearchParams({ ...params, category: "" }).toString()}`}>
+          <Badge
+            variant={!params.category ? "default" : "outline"}
+            className="cursor-pointer"
+          >
+            All Categories
+          </Badge>
+        </Link>
+        {categories?.map((category) => (
+          <Link
+            key={category.slug}
+            href={`/endpoints?${new URLSearchParams({ ...params, category: category.slug }).toString()}`}
+          >
+            <Badge
+              variant={params.category === category.slug ? "default" : "outline"}
+              className="cursor-pointer"
+            >
+              {category.name}
+            </Badge>
+          </Link>
+        ))}
       </div>
 
       {/* Sort options */}
@@ -136,6 +172,7 @@ export default async function EndpointsPage({ searchParams }: EndpointsPageProps
               resourceUrl={endpoint.resource_url}
               description={endpoint.description}
               category={endpoint.category}
+              network={endpoint.network}
               priceMicroUsdc={endpoint.price_micro_usdc}
               uptime24h={endpoint.uptime_24h}
               avgLatencyMs={endpoint.avg_latency_ms}
@@ -146,7 +183,7 @@ export default async function EndpointsPage({ searchParams }: EndpointsPageProps
       ) : (
         <div className="text-center py-12">
           <p className="text-muted-foreground">No endpoints found</p>
-          {params.category && (
+          {(params.category || params.network) && (
             <Link href="/endpoints" className="text-sm text-primary mt-2 block">
               Clear filters
             </Link>

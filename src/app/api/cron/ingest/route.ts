@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { getBazaarClient, BazaarClient } from "@/lib/bazaar/client";
+import { createAggregator, type SourceEndpoint, type SourceStats } from "@/lib/sources";
 import { classifyEndpoint } from "@/lib/classifier";
 
 // Verify cron secret to prevent unauthorized access
@@ -29,36 +29,49 @@ export async function GET(request: NextRequest) {
     updated: 0,
     errors: 0,
   };
+  const errorDetails: string[] = [];
+  let sourceStats: SourceStats[] = [];
 
   try {
     const supabase = createAdminClient();
-    const bazaarClient = getBazaarClient();
 
-    // Fetch all resources from Bazaar
-    console.log("[Ingest] Fetching resources from Bazaar...");
-    const resources = await bazaarClient.fetchAllResources();
-    stats.fetched = resources.length;
-    console.log(`[Ingest] Fetched ${resources.length} resources`);
+    // Allow controlling max pages via query param (default 3, max 15)
+    const url = new URL(request.url);
+    const maxPagesParam = url.searchParams.get("maxPages");
+    const maxPages = Math.min(Math.max(parseInt(maxPagesParam || "3", 10) || 3, 1), 15);
 
-    // Process each resource
-    for (const resource of resources) {
+    // Enable x402apis via env var (disabled by default since registry is empty)
+    const enableX402Apis = process.env.ENABLE_X402APIS === "true";
+    const aggregator = createAggregator(enableX402Apis);
+
+    // Fetch all resources from all configured sources
+    console.log(`[Ingest] Fetching from sources: ${aggregator.getSources().join(", ")} (maxPages: ${maxPages})`);
+    const { endpoints, stats: srcStats } = await aggregator.fetchAll(maxPages);
+    sourceStats = srcStats;
+    stats.fetched = endpoints.length;
+    console.log(`[Ingest] Fetched ${endpoints.length} endpoints from ${srcStats.length} source(s)`);
+
+    // Process each endpoint
+    for (const endpoint of endpoints) {
       try {
-        // Transform the resource
-        const transformed = BazaarClient.transformResource(resource);
-
-        // Classify the endpoint
-        const classification = classifyEndpoint(resource);
+        // Classify the endpoint using description and raw data
+        const classification = classifyEndpoint({
+          url: endpoint.resource_url,
+          description: endpoint.description || undefined,
+          metadata: endpoint.raw_data as Record<string, unknown> | undefined,
+        });
 
         // Prepare the endpoint data
         const endpointData = {
-          resource_url: transformed.resource_url,
-          bazaar_data: transformed.bazaar_data,
-          description: transformed.description,
-          price_micro_usdc: transformed.price_micro_usdc,
-          network: transformed.network,
-          pay_to_address: transformed.pay_to_address,
+          resource_url: endpoint.resource_url,
+          bazaar_data: endpoint.raw_data,
+          description: endpoint.description,
+          price_micro_usdc: endpoint.price_micro_usdc,
+          network: endpoint.network,
+          pay_to_address: endpoint.pay_to_address,
           category: classification.category,
           tags: classification.tags,
+          source: endpoint.source,
           updated_at: new Date().toISOString(),
         };
 
@@ -71,15 +84,19 @@ export async function GET(request: NextRequest) {
           });
 
         if (error) {
-          console.error(`[Ingest] Error upserting ${resource.url}:`, error);
+          console.error(`[Ingest] Error upserting ${endpoint.resource_url}:`, error);
+          if (errorDetails.length < 5) {
+            errorDetails.push(`${endpoint.resource_url}: ${error.message}`);
+          }
           stats.errors++;
         } else {
-          // We can't easily distinguish insert vs update with upsert
-          // Count as updated for simplicity
           stats.updated++;
         }
       } catch (err) {
-        console.error(`[Ingest] Error processing ${resource.url}:`, err);
+        console.error(`[Ingest] Error processing ${endpoint.resource_url}:`, err);
+        if (errorDetails.length < 5) {
+          errorDetails.push(`${endpoint.resource_url}: ${err instanceof Error ? err.message : String(err)}`);
+        }
         stats.errors++;
       }
     }
@@ -96,7 +113,9 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({
       success: true,
       stats,
+      sources: sourceStats,
       duration,
+      ...(errorDetails.length > 0 ? { sampleErrors: errorDetails } : {}),
     });
   } catch (error) {
     console.error("[Ingest] Fatal error:", error);

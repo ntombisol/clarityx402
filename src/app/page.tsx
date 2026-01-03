@@ -32,7 +32,7 @@ export default async function HomePage() {
   const { data: topEndpoints } = await supabase
     .from("endpoints")
     .select(
-      "id, resource_url, description, category, price_micro_usdc, uptime_24h, avg_latency_ms, is_active"
+      "id, resource_url, description, category, network, price_micro_usdc, uptime_24h, avg_latency_ms, is_active"
     )
     .eq("is_active", true)
     .not("uptime_24h", "is", null)
@@ -140,6 +140,7 @@ export default async function HomePage() {
               resourceUrl={endpoint.resource_url}
               description={endpoint.description}
               category={endpoint.category}
+              network={endpoint.network}
               priceMicroUsdc={endpoint.price_micro_usdc}
               uptime24h={endpoint.uptime_24h}
               avgLatencyMs={endpoint.avg_latency_ms}

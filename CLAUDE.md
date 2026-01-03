@@ -9,6 +9,28 @@ Build the complete Clarityx402 MVP (Phases 1-4) with full dashboard, API, and MC
 
 ---
 
+## Current Status (Jan 2026)
+
+### Endpoints Indexed
+- **Total:** 1,415 endpoints
+- **Base:** 1,023 | **Base-sepolia:** 384 | **Solana:** 10
+
+### What's Working
+- ✅ Full dashboard with network filtering
+- ✅ Multi-source data architecture (Bazaar + x402apis.io ready)
+- ✅ Health checks running (50 endpoints per 5-min cycle)
+- ✅ Auto-ingestion with retry logic for rate limits
+- ✅ MCP server built (needs testing with Claude Desktop)
+
+### Recent Changes
+- Added `source` column to track data origin (migration 002)
+- Fixed `error_rate` precision overflow (migration 003)
+- Added network normalization (EIP-155 chain IDs → friendly names)
+- Added network filter badges to UI (Base, Solana, Polygon)
+- Implemented exponential backoff for Bazaar API rate limits
+
+---
+
 ## Project Structure
 
 ```
@@ -44,8 +66,14 @@ x402/
 │   │   │   ├── server.ts                  # Server client
 │   │   │   └── admin.ts                   # Service role client
 │   │   ├── bazaar/
-│   │   │   ├── client.ts                  # Bazaar API client
+│   │   │   ├── client.ts                  # Bazaar API client (CDP JWT auth)
 │   │   │   └── types.ts                   # Bazaar response types
+│   │   ├── sources/                       # Multi-source data architecture
+│   │   │   ├── index.ts                   # Exports
+│   │   │   ├── types.ts                   # Common DataSource interface
+│   │   │   ├── aggregator.ts              # Combines sources, deduplicates
+│   │   │   ├── bazaar-adapter.ts          # Bazaar → DataSource adapter
+│   │   │   └── x402apis.ts                # x402apis.io client (Solana)
 │   │   ├── classifier/
 │   │   │   └── index.ts                   # Auto-categorization logic
 │   │   ├── metrics/
@@ -81,7 +109,9 @@ x402/
 │   └── tsconfig.json
 ├── supabase/
 │   └── migrations/
-│       └── 001_initial_schema.sql
+│       ├── 001_initial_schema.sql
+│       ├── 002_add_source_column.sql      # Track data source origin
+│       └── 003_fix_error_rate_precision.sql
 ├── vercel.json                            # Cron configuration
 ├── .env.local
 ├── .env.example
@@ -93,84 +123,85 @@ x402/
 ## Implementation Tasks
 
 ### Step 1: Project Initialization
-- [ ] Initialize Next.js 14 with TypeScript, Tailwind, App Router
-- [ ] Install dependencies: `@supabase/supabase-js`, `@supabase/ssr`
-- [ ] Set up shadcn/ui with required components
-- [ ] Configure environment variables (.env.local, .env.example)
-- [ ] Create Supabase client utilities (client, server, admin)
+- [x] Initialize Next.js 14 with TypeScript, Tailwind, App Router
+- [x] Install dependencies: `@supabase/supabase-js`, `@supabase/ssr`
+- [x] Set up shadcn/ui with required components
+- [x] Configure environment variables (.env.local, .env.example)
+- [x] Create Supabase client utilities (client, server, admin)
 
 ### Step 2: Database Setup
-- [ ] Create migration file with full schema:
+- [x] Create migration file with full schema:
   - `endpoints` table (core endpoint data + quality metrics)
   - `pings` table (time-series health checks)
   - `price_history` table (daily snapshots)
   - `categories` table (taxonomy reference)
-- [ ] Add indexes for performance (pings by endpoint+time, endpoints by category)
-- [ ] Seed initial categories
-- [ ] Run migration in Supabase
+- [x] Add indexes for performance (pings by endpoint+time, endpoints by category)
+- [x] Seed initial categories
+- [x] Run migration in Supabase
 
 ### Step 3: Bazaar Ingestion Worker
-- [ ] Create Bazaar API client with types
-- [ ] Implement ingestion route `/api/cron/ingest`
-  - Fetch from Coinbase Bazaar API
-  - Parse and transform response
+- [x] Create Bazaar API client with types
+- [x] Implement ingestion route `/api/cron/ingest`
+  - Fetch from Coinbase Bazaar API (with CDP JWT auth)
+  - Parse and transform response (handles `items` format with pagination)
   - Upsert endpoints to database
   - Auto-classify categories on insert
-- [ ] Add error handling and logging
+- [x] Add error handling and logging
 
 ### Step 4: Quality Monitor Worker
-- [ ] Implement health check route `/api/cron/health-check`
+- [x] Implement health check route `/api/cron/health-check`
   - Batch fetch active endpoints
   - Ping each with 5s timeout
   - Record results in `pings` table
   - Update rolling metrics in `endpoints`
-- [ ] Create metrics calculator for uptime/latency aggregation
+- [x] Create metrics calculator for uptime/latency aggregation
 
 ### Step 5: Category Classifier
-- [ ] Build keyword-based auto-classifier
+- [x] Build keyword-based auto-classifier
   - Map keywords to categories (llm, image, defi, etc.)
   - Extract tags from descriptions
-- [ ] Implement classification on ingestion
+- [x] Implement classification on ingestion
 
 ### Step 6: REST API Endpoints
-- [ ] `GET /api/endpoints` - List with filters (category, uptime, price, sort)
-- [ ] `GET /api/endpoints/[id]` - Full endpoint details with history
-- [ ] `GET /api/compare` - Category comparison with ranking
-- [ ] `GET /api/recommend` - Single best recommendation
-- [ ] `GET /api/health/[url]` - Current health status
-- [ ] `GET /api/categories` - List categories with counts
-- [ ] `GET /api/price-history/[id]` - Historical pricing
+- [x] `GET /api/endpoints` - List with filters (category, uptime, price, sort)
+- [x] `GET /api/endpoints/[id]` - Full endpoint details with history
+- [x] `GET /api/compare` - Category comparison with ranking
+- [x] `GET /api/recommend` - Single best recommendation
+- [x] `GET /api/health/[url]` - Current health status
+- [x] `GET /api/categories` - List categories with counts
+- [x] `GET /api/price-history/[id]` - Historical pricing
 
 ### Step 7: Dashboard UI
-- [ ] Layout: Navbar, Sidebar, responsive design
-- [ ] Home page: Ecosystem overview, stats, recent activity
-- [ ] Endpoints browse: Table with filters, sorting, pagination
-- [ ] Endpoint detail: Quality charts, price history, metadata
-- [ ] Compare page: Side-by-side category comparison
-- [ ] Categories page: Browse by category
-- [ ] Status page: Ecosystem health overview
+- [x] Layout: Navbar, responsive design
+- [x] Home page: Ecosystem overview, stats, recent activity
+- [x] Endpoints browse: Table with filters, sorting, pagination
+- [x] Endpoint detail: Quality metrics, price, metadata
+- [x] Compare page: Side-by-side category comparison
+- [x] Categories page: Browse by category
+- [x] Status page: Ecosystem health overview
 
 ### Step 8: MCP Server
-- [ ] Set up separate mcp-server package
-- [ ] Implement tools:
+- [x] Set up separate mcp-server package
+- [x] Implement tools:
   - `find_best_endpoint` - Best for task/budget
   - `compare_endpoints` - Compare category options
   - `check_endpoint_health` - Current status
   - `get_price_history` - Historical prices
   - `list_categories` - Available categories
-- [ ] Create API client to call main REST API
+- [x] Create API client to call main REST API
 - [ ] Test with Claude Desktop
 
 ### Step 9: Cron Configuration
-- [ ] Configure vercel.json with cron schedules:
+- [x] Configure vercel.json with cron schedules:
   - Ingest: every 10 minutes
   - Health check: every 5 minutes
   - Price snapshot: daily
 
-### Step 10: Monetization (Optional for MVP)
-- [ ] Implement rate limiting middleware
-- [ ] Add x402 payment integration for API access
-- [ ] Create pricing tier logic
+### Step 10: Open Source Release
+- [x] Add MIT LICENSE
+- [x] Create CONTRIBUTING.md
+- [x] Update README with setup instructions
+- [ ] Publish to GitHub
 
 ---
 
@@ -297,8 +328,13 @@ NEXT_PUBLIC_SUPABASE_URL=
 NEXT_PUBLIC_SUPABASE_ANON_KEY=
 SUPABASE_SERVICE_ROLE_KEY=
 
-# Bazaar API (no auth required)
+# Bazaar API (CDP authentication required)
 BAZAAR_API_URL=https://api.cdp.coinbase.com/platform/v2/x402/discovery/resources
+CDP_API_KEY_NAME=         # From Coinbase Developer Platform
+CDP_API_KEY_SECRET=       # Base64 encoded ES256 private key
+
+# Cron Secret (for securing cron endpoints)
+CRON_SECRET=
 
 # Optional: Rate limiting
 RATE_LIMIT_FREE_TIER=100
@@ -357,10 +393,36 @@ RATE_LIMIT_FREE_TIER=100
 
 ---
 
+## Next Steps
+
+### Immediate (Ready to Deploy)
+1. **Deploy to Vercel** - Cron jobs will auto-run once deployed
+2. **Test MCP Server with Claude Desktop** - Verify tool integration works
+3. **Add more network colors** - BSC, Arbitrum, Optimism badges
+
+### Short-term Improvements
+4. **Improve category classifier** - Many endpoints uncategorized, enhance keyword matching
+5. **Add provider grouping** - Group endpoints by provider/domain for easier browsing
+6. **Uptime charts** - Visualize 24h/7d/30d uptime trends on endpoint detail page
+7. **Search improvements** - Full-text search across descriptions
+
+### Future Enhancements
+8. **Enable x402apis.io** - Set `ENABLE_X402APIS=true` when they have registered providers
+9. **Webhook notifications** - Alert when endpoints go down or prices change
+10. **More chains** - Add Arbitrum, Optimism, BSC data sources
+11. **Historical analytics** - Long-term uptime trends, price history charts
+
+### Known Issues
+- Bazaar API has Envoy-level rate limiting (stricter than documented 600 req/10s)
+- Some endpoints return non-standard network formats (handled by normalization)
+
+---
+
 ## External Resources
 
 - **x402 Protocol:** https://github.com/coinbase/x402
 - **Bazaar API:** https://api.cdp.coinbase.com/platform/v2/x402/discovery/resources
+- **x402apis.io:** https://x402apis.io (Solana-focused, registry currently empty)
 - **MCP SDK:** https://modelcontextprotocol.io
 - **Supabase Docs:** https://supabase.com/docs
 - **shadcn/ui:** https://ui.shadcn.com
