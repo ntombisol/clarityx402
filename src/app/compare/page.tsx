@@ -1,14 +1,4 @@
 import { createClient } from "@/lib/supabase/server";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
 import Link from "next/link";
 
 export const revalidate = 60;
@@ -19,6 +9,16 @@ interface ComparePageProps {
     sort?: string;
   }>;
 }
+
+const networkClasses: Record<string, string> = {
+  base: "badge-base",
+  "base-sepolia": "badge-base-sepolia",
+  solana: "badge-solana",
+  polygon: "badge-polygon",
+  ethereum: "badge-ethereum",
+  arbitrum: "badge-arbitrum",
+  optimism: "badge-optimism",
+};
 
 export default async function ComparePage({ searchParams }: ComparePageProps) {
   const params = await searchParams;
@@ -56,8 +56,8 @@ export default async function ComparePage({ searchParams }: ComparePageProps) {
         params.sort === "price"
           ? "price_micro_usdc"
           : params.sort === "latency"
-          ? "avg_latency_ms"
-          : "uptime_24h",
+            ? "avg_latency_ms"
+            : "uptime_24h",
         { ascending: params.sort === "price" || params.sort === "latency" }
       )
       .limit(20);
@@ -65,162 +65,292 @@ export default async function ComparePage({ searchParams }: ComparePageProps) {
     endpoints = data || [];
   }
 
+  const selectedCategoryName =
+    categories?.find((c) => c.slug === selectedCategory)?.name ||
+    selectedCategory;
+
   return (
-    <div className="space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold tracking-tight">Compare Endpoints</h1>
+    <div className="space-y-10">
+      {/* Header */}
+      <div className="space-y-2">
+        <h1 className="font-display text-3xl sm:text-4xl tracking-tight">
+          Compare Endpoints
+        </h1>
         <p className="text-muted-foreground">
           Compare x402 endpoints side-by-side within a category
         </p>
       </div>
 
       {/* Category Selection */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Select Category</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="flex flex-wrap gap-2">
-            {categories?.map((category) => (
-              <Link
-                key={category.slug}
-                href={`/compare?category=${category.slug}`}
-              >
-                <Badge
-                  variant={
-                    selectedCategory === category.slug ? "default" : "outline"
-                  }
-                  className="cursor-pointer"
-                >
-                  {category.name} ({category.endpoint_count})
-                </Badge>
-              </Link>
-            ))}
-          </div>
-        </CardContent>
-      </Card>
+      <div className="card-static p-6 space-y-4">
+        <label className="text-xs font-medium text-muted-foreground uppercase tracking-wider flex items-center gap-2">
+          <svg
+            className="w-4 h-4"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={1.5}
+              d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"
+            />
+          </svg>
+          Select Category
+        </label>
+        <div className="flex flex-wrap gap-2">
+          {categories?.map((category) => (
+            <Link
+              key={category.slug}
+              href={`/compare?category=${category.slug}${params.sort ? `&sort=${params.sort}` : ""}`}
+              className={`px-4 py-2 text-sm font-medium rounded-lg transition-all duration-200 ${
+                selectedCategory === category.slug
+                  ? "bg-gradient-to-r from-primary to-accent text-primary-foreground glow-cyan"
+                  : "bg-secondary/50 text-muted-foreground border border-border/50 hover:text-foreground hover:border-primary/30"
+              }`}
+            >
+              {category.name}
+              <span className="ml-2 opacity-60">({category.endpoint_count})</span>
+            </Link>
+          ))}
+        </div>
+      </div>
 
       {/* Sort Options */}
       {selectedCategory && (
-        <div className="flex gap-2 text-sm">
-          <span className="text-muted-foreground">Sort by:</span>
-          <Link
-            href={`/compare?category=${selectedCategory}&sort=uptime`}
-            className={
-              params.sort !== "price" && params.sort !== "latency"
-                ? "font-medium"
-                : "text-muted-foreground"
-            }
-          >
-            Best Uptime
-          </Link>
-          <Link
-            href={`/compare?category=${selectedCategory}&sort=price`}
-            className={
-              params.sort === "price" ? "font-medium" : "text-muted-foreground"
-            }
-          >
-            Lowest Price
-          </Link>
-          <Link
-            href={`/compare?category=${selectedCategory}&sort=latency`}
-            className={
-              params.sort === "latency"
-                ? "font-medium"
-                : "text-muted-foreground"
-            }
-          >
-            Fastest
-          </Link>
+        <div className="flex items-center gap-4">
+          <label className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
+            Sort by
+          </label>
+          <div className="flex gap-1 p-1 rounded-lg bg-secondary/50 border border-border/50">
+            {[
+              { key: "uptime", label: "Best Uptime" },
+              { key: "price", label: "Lowest Price" },
+              { key: "latency", label: "Fastest" },
+            ].map((option) => {
+              const isActive =
+                params.sort === option.key ||
+                (!params.sort && option.key === "uptime");
+
+              return (
+                <Link
+                  key={option.key}
+                  href={`/compare?category=${selectedCategory}&sort=${option.key}`}
+                  className={`relative px-4 py-2 text-sm font-medium rounded-md transition-all duration-200 ${
+                    isActive
+                      ? "text-primary-foreground"
+                      : "text-muted-foreground hover:text-foreground"
+                  }`}
+                >
+                  {isActive && (
+                    <span className="absolute inset-0 bg-gradient-to-r from-primary to-accent rounded-md" />
+                  )}
+                  <span className="relative">{option.label}</span>
+                </Link>
+              );
+            })}
+          </div>
         </div>
       )}
 
       {/* Comparison Table */}
       {endpoints.length > 0 ? (
-        <Card>
-          <CardHeader>
-            <CardTitle>
-              {categories?.find((c) => c.slug === selectedCategory)?.name}{" "}
-              Endpoints
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead className="w-[50px]">#</TableHead>
-                  <TableHead>Endpoint</TableHead>
-                  <TableHead>Network</TableHead>
-                  <TableHead className="text-right">Price</TableHead>
-                  <TableHead className="text-right">Uptime</TableHead>
-                  <TableHead className="text-right">Latency</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {endpoints.map((endpoint, index) => (
-                  <TableRow key={endpoint.id}>
-                    <TableCell className="font-medium">{index + 1}</TableCell>
-                    <TableCell>
-                      <Link
-                        href={`/endpoints/${endpoint.id}`}
-                        className="hover:underline"
-                      >
-                        <div className="font-medium truncate max-w-[300px]">
-                          {new URL(endpoint.resource_url).hostname}
-                        </div>
-                        <div className="text-xs text-muted-foreground truncate max-w-[300px]">
-                          {endpoint.description || endpoint.resource_url}
-                        </div>
-                      </Link>
-                    </TableCell>
-                    <TableCell>
-                      <Badge variant="outline">{endpoint.network || "-"}</Badge>
-                    </TableCell>
-                    <TableCell className="text-right">
-                      {endpoint.price_micro_usdc
-                        ? `$${(endpoint.price_micro_usdc / 1000000).toFixed(4)}`
-                        : "-"}
-                    </TableCell>
-                    <TableCell className="text-right">
-                      {endpoint.uptime_24h !== null ? (
+        <div className="card-static overflow-hidden">
+          <div className="p-5 border-b border-border/50">
+            <h2 className="font-display text-lg flex items-center gap-2">
+              <svg
+                className="w-5 h-5 text-primary"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={1.5}
+                  d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"
+                />
+              </svg>
+              {selectedCategoryName} Endpoints
+              <span className="text-sm font-normal text-muted-foreground ml-2">
+                ({endpoints.length} results)
+              </span>
+            </h2>
+          </div>
+
+          <div className="overflow-x-auto">
+            <table className="w-full table-neural">
+              <thead>
+                <tr className="border-b border-border/50">
+                  <th className="text-left p-4 w-12">#</th>
+                  <th className="text-left p-4">Endpoint</th>
+                  <th className="text-left p-4">Network</th>
+                  <th className="text-right p-4">Price</th>
+                  <th className="text-right p-4">Uptime</th>
+                  <th className="text-right p-4">Latency</th>
+                </tr>
+              </thead>
+              <tbody>
+                {endpoints.map((endpoint, index) => {
+                  const hostname = (() => {
+                    try {
+                      return new URL(endpoint.resource_url).hostname;
+                    } catch {
+                      return endpoint.resource_url;
+                    }
+                  })();
+
+                  const networkClass = endpoint.network
+                    ? networkClasses[endpoint.network] ||
+                      "bg-secondary/50 border-border"
+                    : "";
+
+                  return (
+                    <tr
+                      key={endpoint.id}
+                      className="border-b border-border/30 hover:bg-secondary/30 transition-colors group"
+                    >
+                      {/* Rank */}
+                      <td className="p-4">
                         <span
-                          className={
-                            endpoint.uptime_24h >= 99
-                              ? "text-green-600"
-                              : endpoint.uptime_24h >= 95
-                              ? "text-yellow-600"
-                              : "text-red-600"
-                          }
+                          className={`inline-flex items-center justify-center w-7 h-7 rounded-lg text-xs font-display ${
+                            index === 0
+                              ? "bg-primary/20 text-primary"
+                              : index === 1
+                                ? "bg-accent/20 text-accent"
+                                : index === 2
+                                  ? "bg-amber-500/20 text-amber-400"
+                                  : "bg-secondary text-muted-foreground"
+                          }`}
                         >
-                          {endpoint.uptime_24h}%
+                          {index + 1}
                         </span>
-                      ) : (
-                        "-"
-                      )}
-                    </TableCell>
-                    <TableCell className="text-right">
-                      {endpoint.avg_latency_ms !== null
-                        ? `${endpoint.avg_latency_ms}ms`
-                        : "-"}
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </CardContent>
-        </Card>
+                      </td>
+
+                      {/* Endpoint */}
+                      <td className="p-4">
+                        <Link
+                          href={`/endpoints/${endpoint.id}`}
+                          className="block group-hover:translate-x-1 transition-transform"
+                        >
+                          <span className="font-medium text-sm group-hover:text-primary transition-colors block truncate max-w-[280px]">
+                            {hostname}
+                          </span>
+                          <span className="text-xs text-muted-foreground truncate block max-w-[280px]">
+                            {endpoint.description || endpoint.resource_url}
+                          </span>
+                        </Link>
+                      </td>
+
+                      {/* Network */}
+                      <td className="p-4">
+                        {endpoint.network ? (
+                          <span
+                            className={`text-xs px-2 py-1 rounded capitalize ${networkClass}`}
+                          >
+                            {endpoint.network}
+                          </span>
+                        ) : (
+                          <span className="text-muted-foreground">—</span>
+                        )}
+                      </td>
+
+                      {/* Price */}
+                      <td className="p-4 text-right">
+                        <span className="font-mono text-sm">
+                          {endpoint.price_micro_usdc
+                            ? `$${(endpoint.price_micro_usdc / 1000000).toFixed(4)}`
+                            : "—"}
+                        </span>
+                      </td>
+
+                      {/* Uptime */}
+                      <td className="p-4 text-right">
+                        {endpoint.uptime_24h !== null ? (
+                          <span
+                            className={`font-mono text-sm ${
+                              endpoint.uptime_24h >= 99
+                                ? "text-emerald-400"
+                                : endpoint.uptime_24h >= 95
+                                  ? "text-amber-400"
+                                  : "text-red-400"
+                            }`}
+                          >
+                            {endpoint.uptime_24h}%
+                          </span>
+                        ) : (
+                          <span className="text-muted-foreground">—</span>
+                        )}
+                      </td>
+
+                      {/* Latency */}
+                      <td className="p-4 text-right">
+                        {endpoint.avg_latency_ms !== null ? (
+                          <span
+                            className={`font-mono text-sm ${
+                              endpoint.avg_latency_ms < 500
+                                ? "text-emerald-400"
+                                : endpoint.avg_latency_ms < 2000
+                                  ? "text-amber-400"
+                                  : "text-red-400"
+                            }`}
+                          >
+                            {endpoint.avg_latency_ms}ms
+                          </span>
+                        ) : (
+                          <span className="text-muted-foreground">—</span>
+                        )}
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        </div>
       ) : selectedCategory ? (
-        <Card>
-          <CardContent className="py-8 text-center text-muted-foreground">
+        <div className="card-static p-12 text-center">
+          <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-muted mb-4">
+            <svg
+              className="w-6 h-6 text-muted-foreground"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={1.5}
+                d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+              />
+            </svg>
+          </div>
+          <p className="text-muted-foreground">
             No endpoints found in this category
-          </CardContent>
-        </Card>
+          </p>
+        </div>
       ) : (
-        <Card>
-          <CardContent className="py-8 text-center text-muted-foreground">
+        <div className="card-static p-12 text-center">
+          <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-primary/10 mb-4">
+            <svg
+              className="w-6 h-6 text-primary"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={1.5}
+                d="M8 9l4-4 4 4m0 6l-4 4-4-4"
+              />
+            </svg>
+          </div>
+          <p className="text-muted-foreground">
             Select a category to compare endpoints
-          </CardContent>
-        </Card>
+          </p>
+        </div>
       )}
     </div>
   );

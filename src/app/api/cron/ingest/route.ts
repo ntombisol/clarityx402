@@ -35,10 +35,11 @@ export async function GET(request: NextRequest) {
   try {
     const supabase = createAdminClient();
 
-    // Allow controlling max pages via query param (default 3, max 15)
+    // Allow controlling max pages via query param (default 20, max 30)
+    // With ~100 endpoints per page, 20 pages = ~2000 endpoints
     const url = new URL(request.url);
     const maxPagesParam = url.searchParams.get("maxPages");
-    const maxPages = Math.min(Math.max(parseInt(maxPagesParam || "3", 10) || 3, 1), 15);
+    const maxPages = Math.min(Math.max(parseInt(maxPagesParam || "20", 10) || 20, 1), 30);
 
     // Enable x402apis via env var (disabled by default since registry is empty)
     const enableX402Apis = process.env.ENABLE_X402APIS === "true";

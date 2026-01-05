@@ -43,3 +43,6 @@ next-env.d.ts
 # MCP server build
 /mcp-server/dist
 /mcp-server/node_modules
+
+CLAUDE.md
+x402intelspec.md

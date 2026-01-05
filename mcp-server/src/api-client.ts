@@ -1,6 +1,6 @@
 // API client for calling the Clarityx402 REST API
 
-const DEFAULT_API_URL = process.env.CLARITYX402_API_URL || "http://localhost:3000";
+const DEFAULT_API_URL = process.env.CLARITYX402_API_URL || "https://clarityx402.vercel.app";
 
 export interface Endpoint {
   id: string;
@@ -70,7 +70,7 @@ export class ClarityApiClient {
     if (!response.ok) {
       throw new Error(`API error: ${response.status}`);
     }
-    return response.json();
+    return response.json() as Promise<{ data: Endpoint[]; pagination: { total: number } }>;
   }
 
   async getEndpoint(id: string): Promise<{ endpoint: Endpoint }> {
@@ -78,7 +78,7 @@ export class ClarityApiClient {
     if (!response.ok) {
       throw new Error(`API error: ${response.status}`);
     }
-    return response.json();
+    return response.json() as Promise<{ endpoint: Endpoint }>;
   }
 
   async compareEndpoints(
@@ -92,7 +92,7 @@ export class ClarityApiClient {
     if (!response.ok) {
       throw new Error(`API error: ${response.status}`);
     }
-    return response.json();
+    return response.json() as Promise<{ category: string; endpoints: (Endpoint & { rank: number; score: number })[] }>;
   }
 
   async getRecommendation(options: {
@@ -111,7 +111,10 @@ export class ClarityApiClient {
     if (!response.ok) {
       throw new Error(`API error: ${response.status}`);
     }
-    return response.json();
+    return response.json() as Promise<{
+      recommendation: { endpoint: Endpoint; reasoning: string[] } | null;
+      alternatives: { rank: number; endpoint: Endpoint }[];
+    }>;
   }
 
   async checkHealth(url: string): Promise<HealthStatus> {
@@ -121,7 +124,7 @@ export class ClarityApiClient {
     if (!response.ok) {
       throw new Error(`API error: ${response.status}`);
     }
-    return response.json();
+    return response.json() as Promise<HealthStatus>;
   }
 
   async listCategories(): Promise<{
@@ -132,7 +135,10 @@ export class ClarityApiClient {
     if (!response.ok) {
       throw new Error(`API error: ${response.status}`);
     }
-    return response.json();
+    return response.json() as Promise<{
+      categories: Category[];
+      summary: { totalCategories: number; totalEndpoints: number };
+    }>;
   }
 
   async getPriceHistory(
@@ -152,6 +158,10 @@ export class ClarityApiClient {
     if (!response.ok) {
       throw new Error(`API error: ${response.status}`);
     }
-    return response.json();
+    return response.json() as Promise<{
+      endpoint: { id: string; url: string };
+      history: PriceHistoryRecord[];
+      stats: { min: number; max: number; avg: number; trend: string };
+    }>;
   }
 }

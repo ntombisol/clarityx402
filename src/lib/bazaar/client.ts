@@ -92,7 +92,7 @@ export class BazaarClient {
    * Fetch all resources from the Bazaar API
    * Handles pagination if needed
    */
-  async fetchAllResources(maxPages: number = 3): Promise<BazaarResource[]> {
+  async fetchAllResources(maxPages: number = 20): Promise<BazaarResource[]> {
     const allResources: BazaarResource[] = [];
     let offset: number | undefined;
     let pagesLoaded = 0;

@@ -1,7 +1,7 @@
 {
-  "name": "@clarityx402/mcp-server",
+  "name": "clarityx402-mcp",
   "version": "1.0.0",
-  "description": "MCP Server for Clarityx402 - x402 endpoint intelligence",
+  "description": "MCP Server for Clarityx402 - Find the best x402 endpoints by price, uptime, and latency",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "bin": {
@@ -10,17 +10,40 @@
   "scripts": {
     "build": "tsc",
     "start": "node dist/index.js",
-    "dev": "tsx src/index.ts"
+    "dev": "tsx src/index.ts",
+    "prepublishOnly": "npm run build"
   },
   "keywords": [
     "mcp",
+    "model-context-protocol",
     "x402",
     "api",
     "intelligence",
-    "claude"
+    "claude",
+    "anthropic",
+    "ai-agents",
+    "endpoints",
+    "crypto",
+    "payments"
   ],
   "author": "Tonbi Studio",
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/tonbistudio/clarityx402.git",
+    "directory": "mcp-server"
+  },
+  "homepage": "https://clarityx402.vercel.app/mcp",
+  "bugs": {
+    "url": "https://github.com/tonbistudio/clarityx402/issues"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "files": [
+    "dist",
+    "README.md"
+  ],
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.0.0"
   },
