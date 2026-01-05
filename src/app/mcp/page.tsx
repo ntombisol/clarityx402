@@ -39,7 +39,7 @@ export default function MCPPage() {
             View on npm
           </a>
           <a
-            href="https://github.com/tonbistudio/clarityx402/tree/main/mcp-server"
+            href="https://github.com/ntombisol/clarityx402/tree/main/mcp-server"
             target="_blank"
             rel="noopener noreferrer"
             className="btn-ghost-neural inline-flex items-center gap-2"

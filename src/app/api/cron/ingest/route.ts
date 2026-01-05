@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createAggregator, type SourceEndpoint, type SourceStats } from "@/lib/sources";
-import { classifyEndpoint } from "@/lib/classifier";
+import { classifyEndpoint, generateDescriptionFromUrl } from "@/lib/classifier";
 
 // Verify cron secret to prevent unauthorized access
 function verifyCronSecret(request: NextRequest): boolean {
@@ -55,10 +55,13 @@ export async function GET(request: NextRequest) {
     // Process each endpoint
     for (const endpoint of endpoints) {
       try {
+        // Generate description from URL if none provided
+        const description = endpoint.description || generateDescriptionFromUrl(endpoint.resource_url);
+
         // Classify the endpoint using description and raw data
         const classification = classifyEndpoint({
           url: endpoint.resource_url,
-          description: endpoint.description || undefined,
+          description: description || undefined,
           metadata: endpoint.raw_data as Record<string, unknown> | undefined,
         });
 
@@ -67,7 +70,7 @@ export async function GET(request: NextRequest) {
         const endpointData = {
           resource_url: endpoint.resource_url,
           bazaar_data: endpoint.raw_data,
-          description: endpoint.description,
+          description: description,
           price_micro_usdc: endpoint.price_micro_usdc,
           network: endpoint.network,
           pay_to_address: endpoint.pay_to_address,

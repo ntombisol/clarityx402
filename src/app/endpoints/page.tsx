@@ -8,9 +8,21 @@ interface EndpointsPageProps {
   searchParams: Promise<{
     category?: string;
     network?: string;
+    provider?: string;
     search?: string;
     sort?: string;
   }>;
+}
+
+// Extract provider domain from URL
+function getProvider(url: string): string {
+  try {
+    const hostname = new URL(url).hostname;
+    // Remove www. prefix and get base domain
+    return hostname.replace(/^www\./, "");
+  } catch {
+    return "unknown";
+  }
 }
 
 const networkClasses: Record<string, string> = {
@@ -35,15 +47,27 @@ export default async function EndpointsPage({
     .select("slug, name, endpoint_count")
     .order("endpoint_count", { ascending: false });
 
-  // Fetch all unique networks
-  const { data: networkData } = await supabase
+  // Fetch all unique networks and providers
+  const { data: allEndpoints } = await supabase
     .from("endpoints")
-    .select("network")
+    .select("network, resource_url")
     .eq("is_active", true);
 
   const uniqueNetworks = [
-    ...new Set(networkData?.map((e) => e.network).filter(Boolean) || []),
+    ...new Set(allEndpoints?.map((e) => e.network).filter(Boolean) || []),
   ];
+
+  // Extract and count providers
+  const providerCounts = allEndpoints?.reduce((acc, e) => {
+    const provider = getProvider(e.resource_url);
+    acc[provider] = (acc[provider] || 0) + 1;
+    return acc;
+  }, {} as Record<string, number>) || {};
+
+  // Get top 15 providers sorted by count
+  const topProviders = Object.entries(providerCounts)
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 15);
 
   // Build query
   let query = supabase
@@ -59,6 +83,10 @@ export default async function EndpointsPage({
 
   if (params.network) {
     query = query.eq("network", params.network);
+  }
+
+  if (params.provider) {
+    query = query.ilike("resource_url", `%${params.provider}%`);
   }
 
   if (params.search) {
@@ -174,6 +202,44 @@ export default async function EndpointsPage({
           </div>
         </div>
 
+        {/* Provider filters */}
+        <div className="space-y-3">
+          <label className="text-xs font-medium text-muted-foreground uppercase tracking-wider flex items-center gap-2">
+            <svg
+              className="w-4 h-4"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={1.5}
+                d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"
+              />
+            </svg>
+            Provider
+          </label>
+          <div className="flex flex-wrap gap-2">
+            <FilterChip
+              href={`/endpoints?${buildParams(params, { provider: "" })}`}
+              active={!params.provider}
+            >
+              All Providers
+            </FilterChip>
+            {topProviders.map(([provider, count]) => (
+              <FilterChip
+                key={provider}
+                href={`/endpoints?${buildParams(params, { provider })}`}
+                active={params.provider === provider}
+              >
+                {provider.split(".")[0]}
+                <span className="ml-1.5 text-muted-foreground/60">{count}</span>
+              </FilterChip>
+            ))}
+          </div>
+        </div>
+
         {/* Sort options */}
         <div className="flex items-center gap-4 pt-2 border-t border-border/50">
           <label className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
@@ -239,9 +305,15 @@ export default async function EndpointsPage({
                 on <span className="text-primary capitalize">{params.network}</span>
               </span>
             )}
+            {params.provider && (
+              <span>
+                {" "}
+                from <span className="text-primary">{params.provider}</span>
+              </span>
+            )}
           </p>
 
-          {(params.category || params.network) && (
+          {(params.category || params.network || params.provider) && (
             <Link
               href="/endpoints"
               className="text-xs text-muted-foreground hover:text-primary transition-colors flex items-center gap-1"
@@ -300,7 +372,7 @@ export default async function EndpointsPage({
               </svg>
             </div>
             <p className="text-muted-foreground mb-2">No endpoints found</p>
-            {(params.category || params.network) && (
+            {(params.category || params.network || params.provider) && (
               <Link
                 href="/endpoints"
                 className="text-sm text-primary hover:underline"

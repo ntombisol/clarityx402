@@ -33,13 +33,23 @@ export default async function EndpointDetailPage({
     notFound();
   }
 
-  // Fetch recent pings
+  // Fetch recent pings for list
   const { data: recentPings } = await supabase
     .from("pings")
     .select("pinged_at, success, status_code, latency_ms, error_message")
     .eq("endpoint_id", id)
     .order("pinged_at", { ascending: false })
     .limit(20);
+
+  // Fetch pings for uptime chart (last 24 hours, more granular)
+  const last24h = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
+  const { data: chartPings } = await supabase
+    .from("pings")
+    .select("pinged_at, success, latency_ms")
+    .eq("endpoint_id", id)
+    .gte("pinged_at", last24h)
+    .order("pinged_at", { ascending: true })
+    .limit(100);
 
   // Fetch price history
   const { data: priceHistory } = await supabase
@@ -242,6 +252,33 @@ export default async function EndpointDetailPage({
           }
         />
       </div>
+
+      {/* Uptime Chart */}
+      {chartPings && chartPings.length > 0 && (
+        <div className="card-static overflow-hidden">
+          <div className="p-5 border-b border-border/50">
+            <h2 className="font-display text-lg flex items-center gap-2">
+              <svg
+                className="w-5 h-5 text-primary"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={1.5}
+                  d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"
+                />
+              </svg>
+              Uptime & Latency (Last 24 Hours)
+            </h2>
+          </div>
+          <div className="p-5">
+            <UptimeChart pings={chartPings} />
+          </div>
+        </div>
+      )}
 
       {/* Recent Health Checks */}
       <div className="card-static overflow-hidden">
@@ -483,5 +520,107 @@ function AlertIcon() {
         d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
       />
     </svg>
+  );
+}
+
+// Uptime Chart Component
+function UptimeChart({
+  pings,
+}: {
+  pings: { pinged_at: string; success: boolean; latency_ms: number | null }[];
+}) {
+  // Calculate max latency for scaling
+  const maxLatency = Math.max(
+    ...pings.map((p) => p.latency_ms || 0),
+    1000 // minimum scale
+  );
+
+  // Calculate stats
+  const successCount = pings.filter((p) => p.success).length;
+  const uptimePercent = ((successCount / pings.length) * 100).toFixed(1);
+  const avgLatency = Math.round(
+    pings.reduce((sum, p) => sum + (p.latency_ms || 0), 0) / pings.length
+  );
+
+  return (
+    <div className="space-y-4">
+      {/* Summary stats */}
+      <div className="flex items-center gap-6 text-sm">
+        <div className="flex items-center gap-2">
+          <span className="w-3 h-3 rounded-full bg-emerald-500"></span>
+          <span className="text-muted-foreground">
+            Uptime: <span className="text-foreground font-medium">{uptimePercent}%</span>
+          </span>
+        </div>
+        <div className="flex items-center gap-2">
+          <span className="w-3 h-3 rounded-full bg-primary"></span>
+          <span className="text-muted-foreground">
+            Avg Latency: <span className="text-foreground font-medium">{avgLatency}ms</span>
+          </span>
+        </div>
+        <span className="text-muted-foreground/60 text-xs">
+          {pings.length} checks
+        </span>
+      </div>
+
+      {/* Chart */}
+      <div className="relative">
+        {/* Grid lines */}
+        <div className="absolute inset-0 flex flex-col justify-between pointer-events-none">
+          <div className="border-t border-border/30 w-full"></div>
+          <div className="border-t border-border/30 w-full"></div>
+          <div className="border-t border-border/30 w-full"></div>
+        </div>
+
+        {/* Bars */}
+        <div className="flex items-end gap-0.5 h-32 relative z-10">
+          {pings.map((ping, i) => {
+            const height = ping.latency_ms
+              ? Math.max(4, (ping.latency_ms / maxLatency) * 100)
+              : 4;
+            const time = new Date(ping.pinged_at).toLocaleTimeString([], {
+              hour: "2-digit",
+              minute: "2-digit",
+            });
+
+            return (
+              <div
+                key={i}
+                className="flex-1 group relative"
+                style={{ minWidth: "3px", maxWidth: "12px" }}
+              >
+                <div
+                  className={`w-full rounded-t transition-all duration-200 ${
+                    ping.success
+                      ? "bg-gradient-to-t from-emerald-600 to-emerald-400 group-hover:from-emerald-500 group-hover:to-emerald-300"
+                      : "bg-gradient-to-t from-red-600 to-red-400 group-hover:from-red-500 group-hover:to-red-300"
+                  }`}
+                  style={{ height: `${height}%` }}
+                ></div>
+
+                {/* Tooltip */}
+                <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-2 py-1 bg-background border border-border rounded text-xs whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-20 shadow-lg">
+                  <div className="font-medium">{time}</div>
+                  <div className={ping.success ? "text-emerald-400" : "text-red-400"}>
+                    {ping.success ? `${ping.latency_ms}ms` : "Failed"}
+                  </div>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* Time labels */}
+      <div className="flex justify-between text-xs text-muted-foreground/60">
+        <span>
+          {new Date(pings[0]?.pinged_at).toLocaleTimeString([], {
+            hour: "2-digit",
+            minute: "2-digit",
+          })}
+        </span>
+        <span>Now</span>
+      </div>
+    </div>
   );
 }

@@ -30,12 +30,12 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/tonbistudio/clarityx402.git",
+    "url": "https://github.com/ntombisol/clarityx402.git",
     "directory": "mcp-server"
   },
   "homepage": "https://clarityx402.vercel.app/mcp",
   "bugs": {
-    "url": "https://github.com/tonbistudio/clarityx402/issues"
+    "url": "https://github.com/ntombisol/clarityx402/issues"
   },
   "engines": {
     "node": ">=18.0.0"

@@ -126,7 +126,7 @@ By default, the server connects to `https://clarityx402.vercel.app`. To use a di
 
 - [Dashboard](https://clarityx402.vercel.app)
 - [Documentation](https://clarityx402.vercel.app/mcp)
-- [GitHub](https://github.com/tonbistudio/clarityx402)
+- [GitHub](https://github.com/ntombisol/clarityx402)
 - [x402 Protocol](https://github.com/coinbase/x402)
 
 ## License

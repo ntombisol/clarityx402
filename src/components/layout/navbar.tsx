@@ -4,6 +4,25 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
 
+function TonbiBanner() {
+  return (
+    <div className="w-full bg-gradient-to-r from-primary/10 via-accent/10 to-primary/10 border-b border-border/30">
+      <div className="container-neural flex justify-center py-1">
+        <a
+          href="https://tonbistudio.com"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="text-xs text-muted-foreground hover:text-primary transition-colors duration-300 flex items-center gap-1.5"
+        >
+          <span className="opacity-70">A</span>
+          <span className="font-medium text-foreground/80 hover:text-primary">Tonbi Studio</span>
+          <span className="opacity-70">Project</span>
+        </a>
+      </div>
+    </div>
+  );
+}
+
 const navItems = [
   { href: "/", label: "Overview", icon: GridIcon },
   { href: "/endpoints", label: "Endpoints", icon: DatabaseIcon },
@@ -17,8 +36,13 @@ export function Navbar() {
 
   return (
     <header className="sticky top-0 z-50 w-full">
-      {/* Glass background with gradient border */}
-      <div className="absolute inset-0 glass border-b border-border/50" />
+      {/* Tonbi Studio Banner */}
+      <TonbiBanner />
+
+      {/* Main navbar */}
+      <div className="relative">
+        {/* Glass background with gradient border */}
+        <div className="absolute inset-0 glass border-b border-border/50" />
       <div className="absolute bottom-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-primary/30 to-transparent" />
 
       <div className="relative container-neural h-16 flex items-center justify-between">
@@ -90,7 +114,7 @@ export function Navbar() {
 
           {/* GitHub link */}
           <a
-            href="https://github.com/tonbistudio/clarityx402"
+            href="https://github.com/ntombisol/clarityx402"
             target="_blank"
             rel="noopener noreferrer"
             className="flex items-center justify-center w-9 h-9 rounded-md bg-secondary/50 border border-border/50 text-muted-foreground hover:text-primary hover:border-primary/30 transition-all duration-300"
@@ -107,6 +131,7 @@ export function Navbar() {
           {/* Mobile menu button */}
           <MobileMenu pathname={pathname} />
         </div>
+      </div>
       </div>
     </header>
   );
