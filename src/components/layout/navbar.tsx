@@ -4,25 +4,6 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
 
-function TonbiBanner() {
-  return (
-    <div className="w-full bg-gradient-to-r from-primary/10 via-accent/10 to-primary/10 border-b border-border/30">
-      <div className="container-neural flex justify-center py-1">
-        <a
-          href="https://tonbistudio.com"
-          target="_blank"
-          rel="noopener noreferrer"
-          className="text-xs text-muted-foreground hover:text-primary transition-colors duration-300 flex items-center gap-1.5"
-        >
-          <span className="opacity-70">A</span>
-          <span className="font-medium text-foreground/80 hover:text-primary">Tonbi Studio</span>
-          <span className="opacity-70">Project</span>
-        </a>
-      </div>
-    </div>
-  );
-}
-
 const navItems = [
   { href: "/", label: "Overview", icon: GridIcon },
   { href: "/endpoints", label: "Endpoints", icon: DatabaseIcon },
@@ -36,13 +17,8 @@ export function Navbar() {
 
   return (
     <header className="sticky top-0 z-50 w-full">
-      {/* Tonbi Studio Banner */}
-      <TonbiBanner />
-
-      {/* Main navbar */}
-      <div className="relative">
-        {/* Glass background with gradient border */}
-        <div className="absolute inset-0 glass border-b border-border/50" />
+      {/* Glass background with gradient border */}
+      <div className="absolute inset-0 glass border-b border-border/50" />
       <div className="absolute bottom-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-primary/30 to-transparent" />
 
       <div className="relative container-neural h-16 flex items-center justify-between">
@@ -95,6 +71,20 @@ export function Navbar() {
 
         {/* Right side: MCP + GitHub + Mobile menu */}
         <div className="flex items-center gap-3">
+          {/* Tonbi Studio Badge */}
+          <a
+            href="https://tonbistudio.com"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="hidden sm:flex items-center gap-1 px-2.5 py-1 rounded-full bg-gradient-to-r from-white/10 to-rose-500/20 border border-white/10 hover:border-rose-500/30 transition-all duration-300"
+          >
+            <span className="text-[10px] text-white/60">A</span>
+            <span className="text-[10px] font-medium bg-gradient-to-r from-white to-rose-400 bg-clip-text text-transparent">
+              Tonbi Studio
+            </span>
+            <span className="text-[10px] text-white/60">Project</span>
+          </a>
+
           {/* Status indicator */}
           <div className="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-md bg-secondary/50 border border-border/50">
             <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse-dot" />
@@ -131,7 +121,6 @@ export function Navbar() {
           {/* Mobile menu button */}
           <MobileMenu pathname={pathname} />
         </div>
-      </div>
       </div>
     </header>
   );
