@@ -8,7 +8,12 @@
       "Bash(cat:*)",
       "WebFetch(domain:docs.swarms.world)",
       "Bash(curl:*)",
-      "WebFetch(domain:www.x402scan.com)"
+      "WebFetch(domain:www.x402scan.com)",
+      "WebSearch",
+      "WebFetch(domain:github.com)",
+      "WebFetch(domain:x402.gitbook.io)",
+      "WebFetch(domain:www.quicknode.com)",
+      "WebFetch(domain:facilitator.x402.rs)"
     ]
   }
 }

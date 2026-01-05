@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Inter, Syne, JetBrains_Mono } from "next/font/google";
 import { Navbar } from "@/components/layout/navbar";
 import { GeometricBackground } from "@/components/layout/geometric-background";
+import { Analytics } from "@vercel/analytics/next"
 import "./globals.css";
 
 const inter = Inter({
@@ -51,7 +52,7 @@ export default function RootLayout({
         <div className="fixed inset-0 bg-circuit opacity-50 pointer-events-none" />
         <div className="fixed inset-0 bg-mesh pointer-events-none" />
         <GeometricBackground />
-
+        <Analytics />      
         {/* Main content */}
         <div className="relative z-10 flex flex-col min-h-screen">
           <Navbar />
