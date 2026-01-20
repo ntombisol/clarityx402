@@ -77,15 +77,22 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: error.message }, { status: 500 });
     }
 
-    return NextResponse.json({
-      data,
-      pagination: {
-        total: count,
-        limit,
-        offset,
-        hasMore: count ? offset + limit < count : false,
+    return NextResponse.json(
+      {
+        data,
+        pagination: {
+          total: count,
+          limit,
+          offset,
+          hasMore: count ? offset + limit < count : false,
+        },
       },
-    });
+      {
+        headers: {
+          "Cache-Control": "public, s-maxage=60, stale-while-revalidate=300",
+        },
+      }
+    );
   } catch (error) {
     console.error("[API/endpoints] Error:", error);
     return NextResponse.json(

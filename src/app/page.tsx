@@ -37,21 +37,17 @@ export default async function HomePage() {
     .order("uptime_24h", { ascending: false })
     .limit(6);
 
-  // Fetch network stats
-  const { data: networkStats } = await supabase
-    .from("endpoints")
-    .select("network")
-    .eq("is_active", true);
+  // Fetch network stats using efficient RPC function
+  const { data: networkCounts } = await supabase.rpc("get_network_counts") as {
+    data: Array<{ network: string; count: number }> | null;
+  };
 
-  const networks =
-    networkStats?.reduce(
-      (acc, e) => {
-        const net = e.network || "unknown";
-        acc[net] = (acc[net] || 0) + 1;
-        return acc;
-      },
-      {} as Record<string, number>
-    ) || {};
+  const networks: Record<string, number> = {};
+  if (networkCounts) {
+    for (const row of networkCounts) {
+      networks[row.network] = Number(row.count);
+    }
+  }
 
   const avgUptime =
     healthyEndpoints && totalEndpoints

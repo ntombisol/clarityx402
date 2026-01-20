@@ -3,11 +3,11 @@
   "crons": [
     {
       "path": "/api/cron/ingest",
-      "schedule": "*/10 * * * *"
+      "schedule": "0 */3 * * *"
     },
     {
       "path": "/api/cron/health-check",
-      "schedule": "*/5 * * * *"
+      "schedule": "0 */3 * * *"
     }
   ]
 }

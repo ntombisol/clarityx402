@@ -4,6 +4,24 @@ import type { DataSource, SourceEndpoint, SourceStats } from "./types";
 import { getBazaarAdapter } from "./bazaar-adapter";
 import { getX402ApisClient } from "./x402apis";
 
+/**
+ * Normalize URL for consistent storage and deduplication
+ * - Lowercase the host
+ * - Remove trailing slashes from path
+ * - Keep query params and path intact
+ */
+export function normalizeResourceUrl(url: string): string {
+  try {
+    const parsed = new URL(url);
+    // Normalize: lowercase host, remove trailing slash from path
+    const normalizedPath = parsed.pathname.replace(/\/+$/, "") || "/";
+    return `${parsed.protocol}//${parsed.host.toLowerCase()}${normalizedPath}${parsed.search}`;
+  } catch {
+    // If URL parsing fails, do basic normalization
+    return url.toLowerCase().replace(/\/+$/, "");
+  }
+}
+
 interface AggregatorOptions {
   sources?: DataSource[];
   enableX402Apis?: boolean; // Disabled by default since registry is empty

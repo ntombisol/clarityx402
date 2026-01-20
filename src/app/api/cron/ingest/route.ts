@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { createAggregator, type SourceEndpoint, type SourceStats } from "@/lib/sources";
+import { createAggregator, normalizeResourceUrl, type SourceEndpoint, type SourceStats } from "@/lib/sources";
 import { classifyEndpoint, generateDescriptionFromUrl } from "@/lib/classifier";
 
 // Verify cron secret to prevent unauthorized access
@@ -55,12 +55,15 @@ export async function GET(request: NextRequest) {
     // Process each endpoint
     for (const endpoint of endpoints) {
       try {
+        // Normalize URL for consistent storage and deduplication
+        const normalizedUrl = normalizeResourceUrl(endpoint.resource_url);
+
         // Generate description from URL if none provided
-        const description = endpoint.description || generateDescriptionFromUrl(endpoint.resource_url);
+        const description = endpoint.description || generateDescriptionFromUrl(normalizedUrl);
 
         // Classify the endpoint using description and raw data
         const classification = classifyEndpoint({
-          url: endpoint.resource_url,
+          url: normalizedUrl,
           description: description || undefined,
           metadata: endpoint.raw_data as Record<string, unknown> | undefined,
         });
@@ -68,7 +71,7 @@ export async function GET(request: NextRequest) {
         // Prepare the endpoint data
         // Re-activate endpoints and reset failures when they appear in source data
         const endpointData = {
-          resource_url: endpoint.resource_url,
+          resource_url: normalizedUrl,
           bazaar_data: endpoint.raw_data,
           description: description,
           price_micro_usdc: endpoint.price_micro_usdc,
@@ -91,9 +94,9 @@ export async function GET(request: NextRequest) {
           });
 
         if (error) {
-          console.error(`[Ingest] Error upserting ${endpoint.resource_url}:`, error);
+          console.error(`[Ingest] Error upserting ${normalizedUrl}:`, error);
           if (errorDetails.length < 5) {
-            errorDetails.push(`${endpoint.resource_url}: ${error.message}`);
+            errorDetails.push(`${normalizedUrl}: ${error.message}`);
           }
           stats.errors++;
         } else {

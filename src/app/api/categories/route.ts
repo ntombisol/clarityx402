@@ -28,14 +28,21 @@ export async function GET(request: NextRequest) {
       .eq("is_active", true)
       .is("category", null);
 
-    return NextResponse.json({
-      categories: categories || [],
-      summary: {
-        totalCategories: categories?.length || 0,
-        totalEndpoints: totalEndpoints || 0,
-        uncategorized: uncategorizedCount || 0,
+    return NextResponse.json(
+      {
+        categories: categories || [],
+        summary: {
+          totalCategories: categories?.length || 0,
+          totalEndpoints: totalEndpoints || 0,
+          uncategorized: uncategorizedCount || 0,
+        },
       },
-    });
+      {
+        headers: {
+          "Cache-Control": "public, s-maxage=300, stale-while-revalidate=600",
+        },
+      }
+    );
   } catch (error) {
     console.error("[API/categories] Error:", error);
     return NextResponse.json(
